@@ -5,6 +5,5 @@
   <project name="LineageOS/android_packages_apps_FlipFlap" path="packages/apps/FlipFlap" />
   <project name="LineageOS/android_packages_resources_devicesettings" path="packages/resources/devicesettings" /><!-- for FlipFlap -->
   <project name="Spookcity/android_hardware_samsung" path="hardware/samsung" />
-  <project name="LineageOS/android_external_stlport" path="external/stlport" revision="lineage-15.1" />
   <project name="Spookcity/android_external_protobuf-compat-2.6" path="external/protobuf-compat-2.6" />
 </manifest>
