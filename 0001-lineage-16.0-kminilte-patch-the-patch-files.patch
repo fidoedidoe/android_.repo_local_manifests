@@ -1,0 +1,96 @@
+NOTES:
+Oddly these patch files failed to apply when using SpookCity's repo.
+Although reported, nobody else (other than me) seemed to have this issue,
+so the 'push request' wasn't accepted. To mitigate, I forked the upstream
+repo and modified the patch files so they could be applied correctly (for me)
+diff --git a/patch/frameworks_av/0003-audio-add-non-const-AudioParameter-methods-for-backw.patch b/patch/frameworks_av/0003-audio-add-non-const-AudioParameter-methods-for-backw.patch
+index c235d0c..9a5e8d5 100644
+--- a/patch/frameworks_av/0003-audio-add-non-const-AudioParameter-methods-for-backw.patch
++++ b/patch/frameworks_av/0003-audio-add-non-const-AudioParameter-methods-for-backw.patch
+@@ -14,15 +14,15 @@ diff --git a/media/libaudioclient/include/media/AudioParameter.h b/media/libaudi
+ index 1ace607..ee1804c 100644
+ --- a/media/libaudioclient/include/media/AudioParameter.h
+ +++ b/media/libaudioclient/include/media/AudioParameter.h
+-@@ -76,6 +76,7 @@ public:
+-     static const char * const valueListSeparator;
++@@ -87,6 +87,7 @@ public:
++     static const char * const keyReconfigA2dpSupported;
+  
+      String8 toString() const { return toStringImpl(true); }
+ +    String8 toString();
+      String8 keysToString() const { return toStringImpl(false); }
+  
+      status_t add(const String8& key, const String8& value);
+-@@ -86,8 +87,11 @@ public:
++@@ -97,8 +98,11 @@ public:
+      status_t remove(const String8& key);
+  
+      status_t get(const String8& key, String8& value) const;
+diff --git a/patch/hardware_interfaces/0001-gps.default.so-fix-crash-on-access-to-unset-AGpsRilC.patch b/patch/hardware_interfaces/0001-gps.default.so-fix-crash-on-access-to-unset-AGpsRilC.patch
+index ccc4a65..df6dcad 100644
+--- a/patch/hardware_interfaces/0001-gps.default.so-fix-crash-on-access-to-unset-AGpsRilC.patch
++++ b/patch/hardware_interfaces/0001-gps.default.so-fix-crash-on-access-to-unset-AGpsRilC.patch
+@@ -66,9 +66,9 @@ index cfcee24..10bc2d2 100644
+  };
+  
+ +/*
+-+ * AGnssRilCallback implements the callback methods required by the AGnssRil
+-+ * interface.
+-+ */
+++* AGnssRilCallback implements the callback methods required by the AGnssRil
+++* interface.
+++*/
+ +struct AGnssRilCallback : IAGnssRilCallback {
+ +    Return<void> requestSetIdCb(uint32_t setIdFlag) override;
+ +    Return<void> requestRefLocCb() override;
+@@ -87,19 +87,21 @@ index cfcee24..10bc2d2 100644
+  uint32_t Gnss::sCapabilitiesCached = 0;
+  uint16_t Gnss::sYearOfHwCached = 0;
+  
+-@@ -511,6 +530,12 @@ Return<sp<IAGnssRil>> Gnss::getExtensionAGnssRil()  {
+-             ALOGE("%s GnssRil interface not implemented by GNSS HAL", __func__);
++@@ -511,7 +530,13 @@ Return<sp<IAGnssRil>> Gnss::getExtensionAGnssRil()  {
++             ALOGI("%s: GnssRil interface not implemented by HAL", __func__);
+          } else {
+              mGnssRil = new AGnssRil(agpsRilIface);
++-        }
+ +            sp<IAGnssRilCallback> aGnssRilCb = new AGnssRilCallback();
+ +            if (mGnssRil != nullptr) {
+ +                mGnssRil->setCallback(aGnssRilCb);
+ +            } else {
+ +                ALOGE("Unable to initialize AGnss Ril interface\n");
+ +            }
+-         }
+++       }
+      }
+      return mGnssRil;
++ }
+ -- 
+ 2.7.4
+ 
+diff --git a/patch/packages_services_Telephony/0001-telephony-allow-broadcasts-from-Samsung-RIL.patch b/patch/packages_services_Telephony/0001-telephony-allow-broadcasts-from-Samsung-RIL.patch
+index 34fb895..b8fcbf9 100644
+--- a/patch/packages_services_Telephony/0001-telephony-allow-broadcasts-from-Samsung-RIL.patch
++++ b/patch/packages_services_Telephony/0001-telephony-allow-broadcasts-from-Samsung-RIL.patch
+@@ -20,14 +20,14 @@ diff --git a/AndroidManifest.xml b/AndroidManifest.xml
+ index c2b9800..d20f3c1 100644
+ --- a/AndroidManifest.xml
+ +++ b/AndroidManifest.xml
+-@@ -78,6 +78,10 @@
+-     <protected-broadcast android:name= "com.android.phone.vvm.ACTION_VISUAL_VOICEMAIL_SERVICE_EVENT" />
+-     <protected-broadcast android:name= "com.android.internal.telephony.CARRIER_VVM_PACKAGE_INSTALLED" />
++@@ -101,6 +101,10 @@
++     <protected-broadcast android:name= "org.codeaurora.intent.action.PRIMARY_CARD_CHANGED_IN_SERVICE" />
++     <protected-broadcast android:name= "org.codeaurora.intent.action.SUBSCRIPTION_INFO_RECORD_ADDED" />
+  
+-+    <protected-broadcast android:name= "com.samsung.intent.action.WB_AMR" />
+-+    <protected-broadcast android:name= "android.intent.action.pcmclkctrl" />
+-+    <protected-broadcast android:name= "android.intent.action.PHONE_EXSTATE_CHANGED" />
+-+
++++    <protected-broadcast android:name= "com.samsung.intent.action.WB_AMR" />
++++    <protected-broadcast android:name= "android.intent.action.pcmclkctrl" />
++++    <protected-broadcast android:name= "android.intent.action.PHONE_EXSTATE_CHANGED" />
+++    
+      <uses-permission android:name="android.permission.BROADCAST_STICKY" />
+      <uses-permission android:name="android.permission.CALL_PHONE" />
+      <uses-permission android:name="android.permission.CALL_PRIVILEGED" />
