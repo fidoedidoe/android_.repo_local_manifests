@@ -1,0 +1,154 @@
+NOTES:
+on my local instance i was getting errors when building *just* the kernel, 
+as part of an anykernel2 flashable zip creation (although the issue wasn't related
+to anykernel2). The issues appeared to be path related and visibly impacted
+items such as 'make clean' & 'make mrproper' (possibly others?). 
+diff --git a/drivers/gpu/arm/mali400/r3p2_rel2/Kbuild b/drivers/gpu/arm/mali400/r3p2_rel2/Kbuild
+index a6b3a979..1cc8fed0 100644
+--- a/drivers/gpu/arm/mali400/r3p2_rel2/Kbuild
++++ b/drivers/gpu/arm/mali400/r3p2_rel2/Kbuild
+@@ -34,16 +34,16 @@ ifeq ($(CONFIG_SOC_EXYNOS3250),y)
+ 	TARGET_PLATFORM=exynos3250
+ endif
+ 
+-include $(src)/MALI_CONFIGURATION
++include $(srctree)/$(src)/MALI_CONFIGURATION
+ MALI_PLATFORM = $(MALI_PLATFORM-$(TARGET_PLATFORM))
+ EXTRA_DEFINES += -DMALI_FAKE_PLATFORM_DEVICE=1
+-MALI_PLATFORM_FILES = $(subst $(src)/,,$(wildcard $(src)/platform/$(MALI_PLATFORM)/*.c))
++MALI_PLATFORM_FILES = $(subst $(srctree)/$(src)/,,$(wildcard $(srctree)/$(src)/platform/$(MALI_PLATFORM)/*.c))
+ 
+ # For customer releases the Linux Device Drivers will be provided as ARM proprietary and GPL releases:
+ # The ARM proprietary product will only include the license/proprietary directory
+ # The GPL product will only include the license/gpl directory
+-ifeq ($(wildcard $(src)/linux/license/gpl/*),)
+-    ccflags-y += -I$(src)/linux/license/proprietary
++ifeq ($(wildcard $(srctree)/$(src)/linux/license/gpl/*),)
++    ccflags-y += -I$(srctree)/$(src)/linux/license/proprietary
+     ifeq ($(CONFIG_MALI400_PROFILING),y)
+         $(error Profiling is incompatible with non-GPL license)
+     endif
+@@ -55,7 +55,7 @@ ifeq ($(wildcard $(src)/linux/license/gpl/*),)
+     endif
+     $(error Linux Device integration is incompatible with non-GPL license)
+ else
+-    ccflags-y += -I$(src)/linux/license/gpl
++    ccflags-y += -I$(srctree)/$(src)/linux/license/gpl
+ endif
+ 
+ mali-y += \
+@@ -124,7 +124,7 @@ mali-$(CONFIG_MALI400_PROFILING) += linux/mali_ukk_profiling.o
+ mali-$(CONFIG_MALI400_PROFILING) += linux/mali_osk_profiling.o
+ 
+ mali-$(CONFIG_MALI400_INTERNAL_PROFILING) += linux/mali_profiling_internal.o timestamp-$(TIMESTAMP)/mali_timestamp.o
+-ccflags-$(CONFIG_MALI400_INTERNAL_PROFILING) += -I$(src)/timestamp-$(TIMESTAMP)
++ccflags-$(CONFIG_MALI400_INTERNAL_PROFILING) += -I$(srctree)/$(src)/timestamp-$(TIMESTAMP)
+ 
+ mali-$(CONFIG_DMA_SHARED_BUFFER) += linux/mali_dma_buf.o
+ mali-$(CONFIG_SYNC) += linux/mali_sync.o linux/mali_sync_user.o
+@@ -150,23 +150,23 @@ ifeq ($(MALI_UPPER_HALF_SCHEDULING),1)
+ endif
+ 
+ # MALI_SEC
+-ccflags-$(CONFIG_MALI400_UMP) += -I$(src)/../ump_r3p2/include
++ccflags-$(CONFIG_MALI400_UMP) += -I$(srctree)/$(src)/../ump_r3p2/include
+ ccflags-$(CONFIG_MALI400_DEBUG) += -DDEBUG
+ 
+ # Use our defines when compiling
+-ccflags-y += -I$(src) -I$(src)/include -I$(src)/common -I$(src)/linux -I$(src)/platform
++ccflags-y += -I$(srctree)/$(src) -I$(srctree)/$(src)/include -I$(srctree)/$(src)/common -I$(srctree)/$(src)/linux -I$(srctree)/$(src)/platform
+ # MALI_SEC 
+-ccflags-y += -I$(src)/../ump/include -I$(src)/platform/$(MALI_PLATFORM)
++ccflags-y += -I$(srctree)/$(src)/../ump/include -I$(srctree)/$(src)/platform/$(MALI_PLATFORM)
+ 
+ # Get subversion revision number, fall back to only ${MALI_RELEASE_NAME} if no svn info is available
+-MALI_RELEASE_NAME=$(shell cat $(src)/.version 2> /dev/null)
++MALI_RELEASE_NAME=$(shell cat $(srctree)/$(src)/.version 2> /dev/null)
+ 
+-SVN_INFO = (cd $(src); (svn info || git svn info || \
++SVN_INFO = (cd $(srctree)/$(src); (svn info || git svn info || \
+ 	echo -e "\nURL: $(MALI_RELEASE_NAME)\n" \
+ 	"Last Changed Rev: $(MALI_RELEASE_NAME)\n" \
+ 	"Last Changed Date: $(MALI_RELEASE_NAME)") 2>/dev/null)
+ 
+-SVN_REV := $(shell (cd $(src); echo "$(SVN_INFO)" | grep '^Revision: '| sed -e 's/^Revision: //' ) 2>/dev/null )
++SVN_REV := $(shell (cd $(srctree)/$(src); echo "$(SVN_INFO)" | grep '^Revision: '| sed -e 's/^Revision: //' ) 2>/dev/null )
+ ifeq ($(SVN_REV),)
+ SVN_REV := $(MALI_RELEASE_NAME)
+ else
+@@ -176,7 +176,7 @@ endif
+ ccflags-y += -DSVN_REV_STRING=\"$(SVN_REV)\"
+ 
+ VERSION_STRINGS :=
+-VERSION_STRINGS += API_VERSION=$(shell cd $(src); grep "\#define _MALI_API_VERSION" $(FILES_PREFIX)include/linux/mali/mali_utgard_uk_types.h | cut -d' ' -f 3 )
++VERSION_STRINGS += API_VERSION=$(shell cd $(srctree)/$(src); grep "\#define _MALI_API_VERSION" $(FILES_PREFIX)include/linux/mali/mali_utgard_uk_types.h | cut -d' ' -f 3 )
+ VERSION_STRINGS += REPO_URL=$(shell $(SVN_INFO) | grep '^URL: ' | cut -d: -f2- | cut -b2-)
+ VERSION_STRINGS += REVISION=$(SVN_REV)
+ VERSION_STRINGS += CHANGED_REVISION=$(shell $(SVN_INFO) | grep '^Last Changed Rev: ' | cut -d: -f2- | cut -b2-)
+@@ -198,5 +198,5 @@ VERSION_STRINGS += USING_GPU_UTILIZATION=$(USING_GPU_UTILIZATION)
+ VERSION_STRINGS += MALI_UPPER_HALF_SCHEDULING=$(MALI_UPPER_HALF_SCHEDULING)
+ 
+ # Create file with Mali driver configuration
+-$(src)/__malidrv_build_info.c:
+-	@echo 'const char *__malidrv_build_info(void) { return "malidrv: $(VERSION_STRINGS)";}' > $(src)/__malidrv_build_info.c
++$(srctree)/$(src)/__malidrv_build_info.c:
++	@echo 'const char *__malidrv_build_info(void) { return "malidrv: $(VERSION_STRINGS)";}' > $(srctree)/$(src)/__malidrv_build_info.c
+diff --git a/drivers/gud/gud-exynos4415/Makefile b/drivers/gud/gud-exynos4415/Makefile
+index 23706ec2..a1673b3b 100644
+--- a/drivers/gud/gud-exynos4415/Makefile
++++ b/drivers/gud/gud-exynos4415/Makefile
+@@ -1,7 +1,7 @@
+ #
+ # Makefile for the kernel mobicore drivers
+ #
+-GUD_ROOT_FOLDER := drivers/gud/gud-exynos4415/
++GUD_ROOT_FOLDER := $(srctree)/drivers/gud/gud-exynos4415/
+ # add our modules to kernel.
+ obj-$(CONFIG_MOBICORE_API) += mcKernelApi.o
+ obj-$(CONFIG_MOBICORE_DRIVER) += mcDrvModule.o
+diff --git a/drivers/gud/gud-exynos5260/Makefile b/drivers/gud/gud-exynos5260/Makefile
+index 27a68e60..5137415a 100644
+--- a/drivers/gud/gud-exynos5260/Makefile
++++ b/drivers/gud/gud-exynos5260/Makefile
+@@ -1,7 +1,7 @@
+ #
+ # Makefile for the kernel mobicore drivers
+ #
+-GUD_ROOT_FOLDER := drivers/gud/gud-exynos5260
++GUD_ROOT_FOLDER := $(srctree)/drivers/gud/gud-exynos5260
+ # add our modules to kernel.
+ obj-$(CONFIG_MOBICORE_API) += mcKernelApi.o
+ obj-$(CONFIG_MOBICORE_DRIVER) += mcDrvModule.o
+diff --git a/drivers/gud/gud-exynos5410/Makefile b/drivers/gud/gud-exynos5410/Makefile
+index e95acfa8..1af34c05 100644
+--- a/drivers/gud/gud-exynos5410/Makefile
++++ b/drivers/gud/gud-exynos5410/Makefile
+@@ -1,7 +1,7 @@
+ #
+ # Makefile for the kernel mobicore drivers for Exynos5410
+ #
+-GUD_ROOT_FOLDER := drivers/gud/gud-exynos5410
++GUD_ROOT_FOLDER := $(srctree)/drivers/gud/gud-exynos5410
+ # add our modules to kernel.
+ obj-$(CONFIG_MOBICORE_API) += mcKernelApi.o
+ obj-$(CONFIG_MOBICORE_DRIVER) += mcDrvModule.o
+diff --git a/drivers/gud/gud-exynos5420/Makefile b/drivers/gud/gud-exynos5420/Makefile
+index 7143a6b7..4f9c1650 100644
+--- a/drivers/gud/gud-exynos5420/Makefile
++++ b/drivers/gud/gud-exynos5420/Makefile
+@@ -1,7 +1,7 @@
+ #
+ # Makefile for the kernel mobicore drivers for Exynos5420
+ #
+-GUD_ROOT_FOLDER := drivers/gud/gud-exynos5420
++GUD_ROOT_FOLDER := $(srctree)/drivers/gud/gud-exynos5420
+ # add our modules to kernel.
+ obj-$(CONFIG_MOBICORE_API) += mcKernelApi.o
+ obj-$(CONFIG_MOBICORE_DRIVER) += mcDrvModule.o
+@@ -33,4 +33,4 @@ ccflags-y += -I$(GUD_ROOT_FOLDER)/MobiCoreDriver/platforms/$(MOBICORE_PLATFORM)
+ ccflags-y += -I$(GUD_ROOT_FOLDER)/MobiCoreDriver/public
+ # MobiCore KernelApi required incldes
+ ccflags-y += -I$(GUD_ROOT_FOLDER)/MobiCoreKernelApi/include \
+-		-I$(GUD_ROOT_FOLDER)/MobiCoreKernelApi/public
+\ No newline at end of file
++		-I$(GUD_ROOT_FOLDER)/MobiCoreKernelApi/public
