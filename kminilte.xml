@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <manifest>
-  <project name="fidoedidoe/gcc-prebuilts" path="prebuilts/gcc/linux-x86/arm/arm-eabi-7.4" remote="github" revision="arm-linux-androideabi-linaro-7.x" />
+  <project name="fidoedidoe/gcc-prebuilts" path="prebuilts/gcc/linux-x86/arm/arm-eabi-7.4" remote="github" revision="arm-linux-androideabi-cortex-a7-neon-linaro-7.x" />
   <project name="Spookcity/android_device_samsung_kminilte" path="device/samsung/kminilte" revision="P" remote="github" />
   <project name="Spookcity/android_vendor_samsung_kminilte" path="vendor/samsung/kminilte" revision="P" remote="github" />
   <project name="Spookcity/android_kernel_samsung_kminilte" path="kernel/samsung/kminilte" revision="P_custom" remote="github" />
